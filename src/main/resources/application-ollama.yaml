@@ -1,0 +1,11 @@
+spring:
+  config:
+    activate:
+      on-profile: ollama
+  ai:
+    openai:
+      base-url: http://localhost:11434/v1
+      api-key: ${OPENAI_API_KEY:ollama}
+      chat:
+        options:
+          model: ${OLLAMA_MODEL:llama3.2}

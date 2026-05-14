@@ -1,0 +1,51 @@
+spring:
+  application:
+    name: personal-assistant
+  neo4j:
+    uri: ${NEO4J_URI:bolt://localhost:7687}
+    authentication:
+      username: ${NEO4J_USERNAME:neo4j}
+      password: ${NEO4J_PASSWORD:password}
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY:dummy-local-key}
+      base-url: ${OPENAI_BASE_URL:https://api.openai.com}
+      chat:
+        options:
+          model: ${OPENAI_MODEL:gpt-4o-mini}
+
+server:
+  port: ${SERVER_PORT:8080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when_authorized
+
+whatsapp:
+  cloud:
+    verify-token: ${WHATSAPP_CLOUD_VERIFY_TOKEN:}
+    app-secret: ${WHATSAPP_CLOUD_APP_SECRET:}
+    access-token: ${WHATSAPP_CLOUD_ACCESS_TOKEN:}
+    phone-number-id: ${WHATSAPP_CLOUD_PHONE_NUMBER_ID:}
+    api-version: ${WHATSAPP_CLOUD_API_VERSION:v21.0}
+    graph-base-url: ${WHATSAPP_GRAPH_BASE_URL:https://graph.facebook.com}
+
+assistant:
+  system-prompt: ${ASSISTANT_SYSTEM_PROMPT:You are a helpful personal assistant. Reply concisely.}
+  max-history-messages: ${ASSISTANT_MAX_HISTORY_MESSAGES:40}
+
+memory:
+  conversation:
+    ttl: ${MEMORY_CONVERSATION_TTL:PT24H}
+    max-messages-per-user: ${MEMORY_MAX_MESSAGES_PER_USER:80}
+  idempotency:
+    ttl: ${MEMORY_IDEMPOTENCY_TTL:PT48H}
+
+app:
+  security:
+    allowed-wa-ids-csv: ${ALLOWED_WA_IDS:}
