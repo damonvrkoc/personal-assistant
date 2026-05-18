@@ -46,6 +46,10 @@ public class ConversationMemoryService {
         });
     }
 
+    public int activeConversationCount() {
+        return cache.asMap().size();
+    }
+
     public List<Message> buildModelMessages(String conversationKey, AssistantProperties assistantProperties) {
         List<ConversationTurn> turns = cache.getIfPresent(conversationKey);
         List<Message> messages = new ArrayList<>();

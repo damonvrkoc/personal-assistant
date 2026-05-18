@@ -8,10 +8,10 @@ import com.slack.api.bolt.socket_mode.SocketModeApp;
 import com.slack.api.model.event.MessageEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
-import org.springframework.beans.factory.DisposableBean;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -24,20 +24,24 @@ public class SlackSocketModeRunner
     private final SlackProperties slackProperties;
     private final AssistantService assistantService;
     private final SlackStartupNotifier slackStartupNotifier;
+    private final SlackConnectionState slackConnectionState;
     private SocketModeApp socketModeApp;
 
     public SlackSocketModeRunner(
             SlackProperties slackProperties,
             AssistantService assistantService,
-            SlackStartupNotifier slackStartupNotifier) {
+            SlackStartupNotifier slackStartupNotifier,
+            SlackConnectionState slackConnectionState) {
         this.slackProperties = slackProperties;
         this.assistantService = assistantService;
         this.slackStartupNotifier = slackStartupNotifier;
+        this.slackConnectionState = slackConnectionState;
     }
 
     @Override
     public void onApplicationEvent(ApplicationReadyEvent event) {
         if (!slackProperties.isConfigured()) {
+            slackConnectionState.setStatus(SlackConnectionState.Status.NOT_CONFIGURED);
             log.warn("Slack channel is enabled but SLACK_BOT_TOKEN / SLACK_APP_TOKEN are not set; Socket Mode will not start");
             return;
         }
@@ -52,10 +56,12 @@ public class SlackSocketModeRunner
         try {
             socketModeApp = new SocketModeApp(slackProperties.appToken(), app);
             socketModeApp.startAsync();
+            slackConnectionState.setStatus(SlackConnectionState.Status.CONNECTED);
             log.info("Slack Socket Mode connected");
             slackStartupNotifier.sendStartupRecap();
         } catch (Exception e) {
-            throw new IllegalStateException("Failed to start Slack Socket Mode", e);
+            slackConnectionState.setStatus(SlackConnectionState.Status.FAILED);
+            log.error("Failed to start Slack Socket Mode; application continues without Slack ingress", e);
         }
     }
 
@@ -68,5 +74,6 @@ public class SlackSocketModeRunner
                 log.warn("Error closing Slack Socket Mode", e);
             }
         }
+        slackConnectionState.setStatus(SlackConnectionState.Status.NOT_CONFIGURED);
     }
 }

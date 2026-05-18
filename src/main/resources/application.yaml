@@ -47,6 +47,7 @@ memory:
     ttl: ${MEMORY_IDEMPOTENCY_TTL:PT48H}
 
 app:
+  version: 0.1.0-SNAPSHOT
   channels:
     whatsapp:
       enabled: ${CHANNEL_WHATSAPP_ENABLED:false}

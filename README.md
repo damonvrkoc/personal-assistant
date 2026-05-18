@@ -61,6 +61,21 @@ mvn spring-boot:run
 
 See [`src/main/resources/application-ollama.yaml`](src/main/resources/application-ollama.yaml).
 
+## Status API and web client
+
+While the app is running (default port **8080**):
+
+| URL | Description |
+| --- | --- |
+| `GET /api/status` | JSON snapshot (channels, LLM, Neo4j, memory, uptime) |
+| [http://localhost:8080/client](http://localhost:8080/client) | Browser UI (Refresh + auto-refresh every 10s) |
+
+```bash
+curl http://localhost:8080/api/status
+```
+
+No secrets are exposed in the response (only booleans such as `apiKeyConfigured`).
+
 ## Architecture
 
 - **Ingress**: Slack `SlackSocketModeRunner` (conditional) or WhatsApp `MetaWebhookController` (conditional).
