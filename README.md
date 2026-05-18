@@ -74,7 +74,7 @@ While the app is running (default port **8080**):
 curl http://localhost:8080/api/status
 ```
 
-No secrets are exposed in the response (only booleans such as `apiKeyConfigured`).
+No secrets are exposed in the response (only booleans such as `apiKeyConfigured`). The `neo4j` section includes `configured`, `status`, `uri` (no password), `detail` (connectivity error message when DOWN), and `lastPersistence` (`NONE` / `OK` / `FAILED` from async chat writes).
 
 ## Architecture
 

@@ -29,13 +29,16 @@ class StatusControllerTest {
                                 new AgentStatusResponse.ChannelStatus(true, true, "CONNECTED"),
                                 new AgentStatusResponse.ChannelStatus(false, false, "N/A")),
                         new AgentStatusResponse.LlmInfo("openai-compatible", "gpt-4o-mini", "https://api.openai.com", true),
-                        new AgentStatusResponse.Neo4jInfo("UP"),
+                        new AgentStatusResponse.Neo4jInfo(
+                                true, "UP", "bolt://localhost:7687", null, "NONE"),
                         new AgentStatusResponse.MemoryInfo(0)));
 
         mockMvc.perform(get("/api/status"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.application.name").value("personal-assistant"))
                 .andExpect(jsonPath("$.channels.slack.socketMode").value("CONNECTED"))
-                .andExpect(jsonPath("$.neo4j.status").value("UP"));
+                .andExpect(jsonPath("$.neo4j.status").value("UP"))
+                .andExpect(jsonPath("$.neo4j.configured").value(true))
+                .andExpect(jsonPath("$.neo4j.uri").value("bolt://localhost:7687"));
     }
 }

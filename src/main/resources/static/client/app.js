@@ -63,7 +63,14 @@ function renderStatus(data) {
         row('Base URL', llm.baseUrl) +
         row('API key set', llm.apiKeyConfigured)
     ),
-    renderCard('Neo4j', row('Status', neo4j.status, true)),
+    renderCard(
+      'Neo4j',
+      row('Configured', neo4j.configured) +
+        row('Status', neo4j.status, true) +
+        row('URI', neo4j.uri) +
+        row('Last persistence', neo4j.lastPersistence, true) +
+        (neo4j.detail ? row('Detail', neo4j.detail) : '')
+    ),
     renderCard('Memory', row('Active conversations', memory.activeConversations)),
   ].join('');
 }

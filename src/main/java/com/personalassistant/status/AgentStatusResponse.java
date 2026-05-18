@@ -15,7 +15,12 @@ public record AgentStatusResponse(
 
     public record LlmInfo(String provider, String model, String baseUrl, boolean apiKeyConfigured) {}
 
-    public record Neo4jInfo(String status) {}
+    public record Neo4jInfo(
+            boolean configured,
+            String status,
+            String uri,
+            String detail,
+            String lastPersistence) {}
 
     public record MemoryInfo(int activeConversations) {}
 }
