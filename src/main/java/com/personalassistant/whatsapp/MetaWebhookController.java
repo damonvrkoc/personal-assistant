@@ -1,7 +1,11 @@
 package com.personalassistant.whatsapp;
 
 import com.personalassistant.assistant.AssistantService;
+import com.personalassistant.channel.ChannelMessage;
+import com.personalassistant.channel.ChannelType;
+import com.personalassistant.config.ChannelConditions;
 import com.personalassistant.config.WhatsAppCloudProperties;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@ConditionalOnProperty(name = ChannelConditions.WHATSAPP_ENABLED, havingValue = "true")
 public class MetaWebhookController {
 
     private static final Logger log = LoggerFactory.getLogger(MetaWebhookController.class);
@@ -56,7 +61,14 @@ public class MetaWebhookController {
         }
         for (InboundMessage message : webhookParser.parseTextMessages(body)) {
             try {
-                assistantService.handle(message);
+                ChannelMessage channelMessage = new ChannelMessage(
+                        ChannelType.WHATSAPP,
+                        message.waId(),
+                        message.text(),
+                        message.messageId(),
+                        message.timestampSeconds(),
+                        message.waId());
+                assistantService.handle(channelMessage);
             } catch (RuntimeException e) {
                 log.error("Failed to handle inbound messageId={}", message.messageId(), e);
                 return ResponseEntity.internalServerError().build();

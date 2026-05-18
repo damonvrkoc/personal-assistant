@@ -7,14 +7,16 @@ import org.springframework.data.neo4j.core.schema.Id;
 import org.springframework.data.neo4j.core.schema.Node;
 import org.springframework.data.neo4j.core.schema.Relationship;
 
-@Node("WhatsAppUser")
-public class WhatsAppUserEntity {
+@Node("ChannelUser")
+public class ChannelUserEntity {
 
     @Id
     @GeneratedValue
     private Long id;
 
-    private String waId;
+    private String channel;
+
+    private String externalId;
 
     @Relationship(type = "HAD_TURN", direction = Relationship.Direction.OUTGOING)
     private List<ConversationTurnEntity> turns = new ArrayList<>();
@@ -23,12 +25,20 @@ public class WhatsAppUserEntity {
         return id;
     }
 
-    public String getWaId() {
-        return waId;
+    public String getChannel() {
+        return channel;
     }
 
-    public void setWaId(String waId) {
-        this.waId = waId;
+    public void setChannel(String channel) {
+        this.channel = channel;
+    }
+
+    public String getExternalId() {
+        return externalId;
+    }
+
+    public void setExternalId(String externalId) {
+        this.externalId = externalId;
     }
 
     public List<ConversationTurnEntity> getTurns() {

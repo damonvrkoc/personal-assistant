@@ -1,5 +1,6 @@
 package com.personalassistant.knowledge;
 
+import com.personalassistant.channel.ChannelType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
@@ -17,11 +18,11 @@ public class TurnPersistenceService {
     }
 
     @Async
-    public void recordTurnAsync(String waId, String role, String text) {
+    public void recordTurnAsync(ChannelType channel, String externalId, String role, String text) {
         try {
-            neo4jTurnWriter.saveTurn(waId, role, text);
+            neo4jTurnWriter.saveTurn(channel, externalId, role, text);
         } catch (Exception e) {
-            log.warn("Failed to persist turn to Neo4j waId={} role={}", waId, role, e);
+            log.warn("Failed to persist turn to Neo4j channel={} user={} role={}", channel, externalId, role, e);
         }
     }
 }

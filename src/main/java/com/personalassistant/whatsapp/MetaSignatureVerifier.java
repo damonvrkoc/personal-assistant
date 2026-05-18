@@ -5,9 +5,12 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+import com.personalassistant.config.ChannelConditions;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 @Component
+@ConditionalOnProperty(name = ChannelConditions.WHATSAPP_ENABLED, havingValue = "true")
 public class MetaSignatureVerifier {
 
     public boolean isValid(byte[] rawBody, String signatureHeader, String appSecret) {

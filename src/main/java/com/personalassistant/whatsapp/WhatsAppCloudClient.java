@@ -3,10 +3,13 @@ package com.personalassistant.whatsapp;
 import com.personalassistant.config.WhatsAppCloudProperties;
 import java.util.Map;
 import org.springframework.http.MediaType;
+import com.personalassistant.config.ChannelConditions;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 @Component
+@ConditionalOnProperty(name = ChannelConditions.WHATSAPP_ENABLED, havingValue = "true")
 public class WhatsAppCloudClient {
 
     private final WhatsAppCloudProperties props;

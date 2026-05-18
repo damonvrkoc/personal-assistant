@@ -1,5 +1,6 @@
 package com.personalassistant.knowledge;
 
+import com.personalassistant.channel.ChannelType;
 import java.time.Instant;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -7,19 +8,21 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class Neo4jTurnWriter {
 
-    private final WhatsAppUserRepository userRepository;
+    private final ChannelUserRepository userRepository;
 
-    public Neo4jTurnWriter(WhatsAppUserRepository userRepository) {
+    public Neo4jTurnWriter(ChannelUserRepository userRepository) {
         this.userRepository = userRepository;
     }
 
     @Transactional
-    public void saveTurn(String waId, String role, String text) {
-        WhatsAppUserEntity user = userRepository
-                .findByWaId(waId)
+    public void saveTurn(ChannelType channel, String externalId, String role, String text) {
+        String channelName = channel.name().toLowerCase();
+        ChannelUserEntity user = userRepository
+                .findByChannelAndExternalId(channelName, externalId)
                 .orElseGet(() -> {
-                    WhatsAppUserEntity u = new WhatsAppUserEntity();
-                    u.setWaId(waId);
+                    ChannelUserEntity u = new ChannelUserEntity();
+                    u.setChannel(channelName);
+                    u.setExternalId(externalId);
                     return userRepository.save(u);
                 });
 

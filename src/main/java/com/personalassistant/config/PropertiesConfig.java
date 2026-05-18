@@ -8,6 +8,8 @@ import org.springframework.context.annotation.Configuration;
     WhatsAppCloudProperties.class,
     AssistantProperties.class,
     MemoryProperties.class,
-    AppSecurityProperties.class
+    AppSecurityProperties.class,
+    ChannelProperties.class,
+    SlackProperties.class
 })
 public class PropertiesConfig {}

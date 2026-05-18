@@ -47,5 +47,17 @@ memory:
     ttl: ${MEMORY_IDEMPOTENCY_TTL:PT48H}
 
 app:
+  channels:
+    whatsapp:
+      enabled: ${CHANNEL_WHATSAPP_ENABLED:false}
+    slack:
+      enabled: ${CHANNEL_SLACK_ENABLED:true}
   security:
     allowed-wa-ids-csv: ${ALLOWED_WA_IDS:}
+    allowed-slack-user-ids-csv: ${ALLOWED_SLACK_USER_IDS:}
+
+slack:
+  bot-token: ${SLACK_BOT_TOKEN:}
+  app-token: ${SLACK_APP_TOKEN:}
+  startup-notify-enabled: ${SLACK_STARTUP_NOTIFY_ENABLED:true}
+  startup-notify-user: ${SLACK_STARTUP_NOTIFY_USER:damon.vrkoc}

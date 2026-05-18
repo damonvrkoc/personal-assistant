@@ -27,16 +27,16 @@ public class ConversationMemoryService {
                 .build();
     }
 
-    public void appendUser(String waId, String text) {
-        append(waId, new ConversationTurn("user", text));
+    public void appendUser(String conversationKey, String text) {
+        append(conversationKey, new ConversationTurn("user", text));
     }
 
-    public void appendAssistant(String waId, String text) {
-        append(waId, new ConversationTurn("assistant", text));
+    public void appendAssistant(String conversationKey, String text) {
+        append(conversationKey, new ConversationTurn("assistant", text));
     }
 
-    private void append(String waId, ConversationTurn turn) {
-        cache.asMap().compute(waId, (k, existing) -> {
+    private void append(String conversationKey, ConversationTurn turn) {
+        cache.asMap().compute(conversationKey, (k, existing) -> {
             List<ConversationTurn> list = existing == null ? new ArrayList<>() : new ArrayList<>(existing);
             list.add(turn);
             while (list.size() > maxMessagesPerUser) {
@@ -46,12 +46,8 @@ public class ConversationMemoryService {
         });
     }
 
-    /**
-     * Builds messages for the model: system prompt plus recent history (already includes latest user turn
-     * if {@link #appendUser} was called first).
-     */
-    public List<Message> buildModelMessages(String waId, AssistantProperties assistantProperties) {
-        List<ConversationTurn> turns = cache.getIfPresent(waId);
+    public List<Message> buildModelMessages(String conversationKey, AssistantProperties assistantProperties) {
+        List<ConversationTurn> turns = cache.getIfPresent(conversationKey);
         List<Message> messages = new ArrayList<>();
         messages.add(new SystemMessage(assistantProperties.systemPrompt()));
         if (turns == null || turns.isEmpty()) {

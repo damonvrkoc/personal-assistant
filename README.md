@@ -1,47 +1,57 @@
-# Personal assistant (WhatsApp, Spring Boot)
+# Personal assistant (Slack + WhatsApp, Spring Boot)
 
-Spring Boot service that receives [WhatsApp Cloud API](https://developers.facebook.com/docs/whatsapp/cloud-api) webhooks, keeps short-term chat history in an in-memory Caffeine cache, persists conversation turns to Neo4j asynchronously, and replies using Spring AI’s `ChatModel` (OpenAI-compatible client by default, swappable via configuration).
+Spring Boot service that chats over **Slack** (Socket Mode) and/or **WhatsApp** (Meta Cloud API). Channels are toggled independently. Short-term history lives in a Caffeine cache; conversation turns are persisted to Neo4j asynchronously. Replies use Spring AI’s `ChatModel` (OpenAI-compatible by default).
 
 ## Requirements
 
-- JDK **17+** (the build targets Java 17 bytecode for broad compatibility).
-- Maven 3.9+.
-- A reachable **Neo4j** instance (local Docker, Neo4j Aura, etc.).
-- **Meta WhatsApp Business Platform** app with Cloud API enabled.
-- An **LLM endpoint** compatible with the configured Spring AI OpenAI client (OpenAI, many proxies, or Ollama via OpenAI compatibility mode).
+- JDK **17+**
+- Maven 3.9+
+- **Neo4j** (local or Aura)
+- **Slack app** with Socket Mode (default channel) and/or **Meta WhatsApp Business** app
+- An **LLM endpoint** (OpenAI, Ollama via OpenAI compatibility, etc.)
 
-## Quick start
+## Quick start (Slack, default)
 
-1. Start Neo4j and set `NEO4J_URI`, `NEO4J_USERNAME`, `NEO4J_PASSWORD`.
-2. Export WhatsApp Cloud API variables (see below) and `OPENAI_API_KEY` (or use the Ollama profile).
+1. Start Neo4j; set `NEO4J_URI`, `NEO4J_USERNAME`, `NEO4J_PASSWORD`.
+2. Copy [`.env.example`](.env.example) and set `SLACK_BOT_TOKEN`, `SLACK_APP_TOKEN`, `OPENAI_API_KEY`.
 3. Run:
 
 ```bash
 mvn spring-boot:run
 ```
 
-4. Expose `https://<public-host>/webhook/whatsapp` to Meta (ngrok, Cloudflare Tunnel, etc.) and complete webhook verification in the Meta developer console.
+4. DM the bot in Slack. No public HTTPS URL is required (Socket Mode).
+
+Defaults: `CHANNEL_SLACK_ENABLED=true`, `CHANNEL_WHATSAPP_ENABLED=false`.
+
+## Slack setup (Socket Mode)
+
+1. Create an app at [api.slack.com/apps](https://api.slack.com/apps).
+2. Enable **Socket Mode**; create an **App-Level Token** with scope `connections:write` → `SLACK_APP_TOKEN` (`xapp-...`).
+3. **OAuth & Permissions** → Bot Token Scopes: `chat:write`, `im:history`, `im:read`, `users:read` (lookup user for startup DM).
+4. Install the app to your workspace → `SLACK_BOT_TOKEN` (`xoxb-...`).
+5. **Event Subscriptions** → enable and subscribe to bot event **`message.im`** (required even with Socket Mode).
+6. Set env vars and run the app. You should see `Slack Socket Mode connected` and a startup recap DM to `damon.vrkoc` (override with `SLACK_STARTUP_NOTIFY_USER` or your Slack user ID `U...`).
+
+## WhatsApp setup (optional)
+
+Set `CHANNEL_WHATSAPP_ENABLED=true` and configure Meta Cloud API variables. Expose `https://<public-host>/webhook/whatsapp` (ngrok, etc.) and complete webhook verification in the Meta developer console.
 
 ## Environment variables
 
 | Variable | Purpose |
 | --- | --- |
-| `WHATSAPP_CLOUD_VERIFY_TOKEN` | Must match the verify token you configure in Meta’s webhook UI. |
-| `WHATSAPP_CLOUD_APP_SECRET` | Used to validate `X-Hub-Signature-256` on inbound webhooks. |
-| `WHATSAPP_CLOUD_ACCESS_TOKEN` | Bearer token for outbound Graph API calls. |
-| `WHATSAPP_CLOUD_PHONE_NUMBER_ID` | WhatsApp phone number id from Meta. |
-| `WHATSAPP_CLOUD_API_VERSION` | Optional, default `v21.0`. |
-| `WHATSAPP_GRAPH_BASE_URL` | Optional, default `https://graph.facebook.com`. |
-| `ALLOWED_WA_IDS` | Optional comma-separated allowlist of WhatsApp user ids (digits, no `+`). When empty, all senders are accepted. |
-| `OPENAI_API_KEY` | API key for the default OpenAI-compatible client. |
-| `OPENAI_BASE_URL` | Optional override (defaults to `https://api.openai.com`). Set to `http://localhost:11434/v1` for Ollama compatibility. |
-| `OPENAI_MODEL` | Optional model name (default `gpt-4o-mini`). |
-| `NEO4J_URI` | Bolt URI, default `bolt://localhost:7687`. |
-| `NEO4J_USERNAME` / `NEO4J_PASSWORD` | Neo4j credentials. |
+| `CHANNEL_SLACK_ENABLED` | Enable Slack (default `true`). |
+| `CHANNEL_WHATSAPP_ENABLED` | Enable WhatsApp (default `false`). |
+| `SLACK_BOT_TOKEN` | Bot token (`xoxb-...`) for `chat.postMessage`. |
+| `SLACK_APP_TOKEN` | App-level token (`xapp-...`) for Socket Mode. |
+| `ALLOWED_SLACK_USER_IDS` | Optional comma-separated Slack user IDs. |
+| `WHATSAPP_CLOUD_*` | Meta webhook and Graph API (when WhatsApp enabled). |
+| `ALLOWED_WA_IDS` | Optional comma-separated WhatsApp user ids. |
+| `OPENAI_API_KEY` / `OPENAI_BASE_URL` / `OPENAI_MODEL` | Spring AI OpenAI client. |
+| `NEO4J_URI` / `NEO4J_USERNAME` / `NEO4J_PASSWORD` | Neo4j connection. |
 
-## Ollama (OpenAI-compatible) profile
-
-Activate Spring profile `ollama` and point the OpenAI client at Ollama’s OpenAI shim:
+## Ollama profile
 
 ```bash
 export SPRING_PROFILES_ACTIVE=ollama
@@ -51,13 +61,13 @@ mvn spring-boot:run
 
 See [`src/main/resources/application-ollama.yaml`](src/main/resources/application-ollama.yaml).
 
-## Architecture notes
+## Architecture
 
-- `GET /webhook/whatsapp` implements Meta’s subscription challenge.
-- `POST /webhook/whatsapp` verifies the HMAC signature, parses text messages, and hands them to `AssistantService`.
-- `WebhookIdempotencyService` deduplicates `wamid` retries; failed processing releases the id so Meta retries can succeed.
-- `ConversationMemoryService` stores recent turns per `wa_id` with TTL and a hard cap on stored messages.
-- `TurnPersistenceService` appends `(:WhatsAppUser)-[:HAD_TURN]->(:ConversationTurn)` asynchronously for durable history.
+- **Ingress**: Slack `SlackSocketModeRunner` (conditional) or WhatsApp `MetaWebhookController` (conditional).
+- **Core**: `ChannelMessage` → `AssistantService` → Caffeine memory + `ChatModel`.
+- **Egress**: `OutboundMessenger` per channel (`SlackOutboundMessenger`, `WhatsAppOutboundMessenger`).
+- Conversation keys: `slack:U123`, `whatsapp:1555...` (separate history per channel).
+- Neo4j: `(:ChannelUser {channel, externalId})-[:HAD_TURN]->(:ConversationTurn)`.
 
 ## Tests
 
@@ -67,4 +77,4 @@ mvn test
 
 ## Security
 
-Never commit real tokens. Prefer environment variables or a secret manager in production, and rotate the Meta app secret if it is exposed.
+Never commit real tokens. Use environment variables or a secret manager in production.

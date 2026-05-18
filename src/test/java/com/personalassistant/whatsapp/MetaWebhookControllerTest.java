@@ -25,6 +25,8 @@ import org.springframework.test.web.servlet.MockMvc;
 @Import({MetaSignatureVerifier.class, WhatsAppWebhookParser.class})
 @TestPropertySource(
         properties = {
+            "app.channels.whatsapp.enabled=true",
+            "app.channels.slack.enabled=false",
             "whatsapp.cloud.verify-token=test-verify",
             "whatsapp.cloud.app-secret=test-secret",
             "whatsapp.cloud.access-token=test-access",
